@@ -44,6 +44,7 @@ let
       default = "${cfg.dataDir}/chain/bitcoin/${bitcoind.network}";
       description = "The network data directory.";
     };
+    useNeutrino = mkEnableOption "Use an Neutrino light node instead of bitcoind";
     tor-socks = mkOption {
       type = types.nullOr types.str;
       default = if cfg.tor.proxy then config.nix-bitcoin.torClientAddressWithPort else null;
@@ -144,16 +145,20 @@ let
 
     bitcoin.${bitcoind.network}=1
     bitcoin.active=1
-    bitcoin.node=bitcoind
 
     ${optionalString (cfg.tor.proxy) "tor.active=true"}
     ${optionalString (cfg.tor-socks != null) "tor.socks=${cfg.tor-socks}"}
-
+    ${optionalString (!cfg.useNeutrino) ''
+    bitcoin.node=bitcoind
     bitcoind.rpchost=${bitcoindRpcAddress}:${toString bitcoind.rpc.port}
     bitcoind.rpcuser=${bitcoind.rpc.users.public.name}
     bitcoind.zmqpubrawblock=${bitcoind.zmqpubrawblock}
     bitcoind.zmqpubrawtx=${bitcoind.zmqpubrawtx}
-
+    ''}
+      ${optionalString cfg.useNeutrino ''
+        bitcoin.node=neutrino
+        feeurl=https://nodes.lightning.computer/fees/v1/btc-fee-estimates.json
+    ''}
     ${cfg.extraConfig}
   '';
 in {
@@ -175,7 +180,7 @@ in {
     ];
 
     services.bitcoind = {
-      enable = true;
+      enable = !cfg.useNeutrino;
 
       # Increase rpc thread count due to reports that lightning implementations fail
       # under high bitcoind rpc load
@@ -193,8 +198,8 @@ in {
 
     systemd.services.lnd = {
       wantedBy = [ "multi-user.target" ];
-      requires = [ "bitcoind.service" ];
-      after = [ "bitcoind.service" ];
+      requires = if cfg.useNeutrino then [] else [ "bitcoind.service" ];
+      after = if cfg.useNeutrino then [] else [ "bitcoind.service" ];
       preStart = ''
         install -m600 ${configFile} '${cfg.dataDir}/lnd.conf'
         {
