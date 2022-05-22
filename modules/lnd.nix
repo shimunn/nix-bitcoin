@@ -71,6 +71,11 @@ let
         Extra macaroon definitions.
       '';
     };
+    staticChannelBackupScript = mkOption {
+      type = with types; nullOr str;
+      default = null;
+      description = "Script to be invoked whenever channels.backup changes";
+    };
     extraConfig = mkOption {
       type = types.lines;
       default = "";
@@ -258,6 +263,22 @@ in {
             '') (attrNames cfg.macaroons)}
           '';
       } // nbLib.allowedIPAddresses cfg.tor.enforce;
+    };
+    
+    systemd.paths.lnd-channel-backup = mkIf (cfg.staticChannelBackupScript != null) {
+      wantedBy = [ "multi-user.target" ];
+      pathConfig = {
+        PathChanged = cfg.dataDir + "/chain/bitcoin/${bitcoind.network}/channel.backup";
+        Unit = "lnd-channel-backup.service";
+      };
+    };
+
+    systemd.services.lnd-channel-backup = mkIf (cfg.staticChannelBackupScript != null) {
+      serviceConfig = {
+        User = cfg.user;
+        Group = cfg.group;
+      };
+      script = cfg.staticChannelBackupScript;
     };
 
     users.users.${cfg.user} = {
