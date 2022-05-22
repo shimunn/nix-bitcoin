@@ -202,6 +202,35 @@ let
           config to your node.
       '';
     }
+    {
+      version = "0.0.70";
+      condition = config.services.nbxplorer.enable;
+      message = ''
+        The nbxplorer database backend has changed from DBTrie to Postgresql.
+        The new `services.postgresql` database name is `nbxplorer`.
+        The migration happens automatically after deploying.
+        Migration time for a large server with a 5GB DBTrie database takes about 40 minutes.
+        See also: https://github.com/dgarage/NBXplorer/blob/master/docs/Postgres-Migration.md
+      '';
+    }
+    {
+      version = "0.0.70";
+      condition = config.services.clightning-rest.enable;
+      message = ''
+        The `cl-rest` service has been renamed to `clightning-rest`.
+        and is now available as a standalone service (`services.clightning-rest`).
+        Its data dir has moved to `${config.services.clightning-rest.dataDir}`,
+        and the service now runs under the clightning user and group.
+        The data dir migration happens automatically after deploying.
+      '';
+    }
+    {
+      version = "0.0.70";
+      condition = config.services.lnd.lndconnectOnion.enable;
+      message = ''
+        The `lndconnect-rest-onion` binary has been renamed to `lndconnect-onion`.
+      '';
+    }
   ];
 
   mkOnionServiceChange = service: {

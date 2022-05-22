@@ -3,13 +3,17 @@ let
 in
 # Set default values for use without flakes
 { pkgs ? import <nixpkgs> { config = {}; overlays = []; }
-, pkgsUnstable ? import nixpkgsPinned.nixpkgs-unstable { config = {}; overlays = []; }
+, pkgsUnstable ? import nixpkgsPinned.nixpkgs-unstable {
+    inherit (pkgs) system;
+    config = {};
+    overlays = [];
+  }
 }:
 let self = {
-  cl-rest = pkgs.callPackage ./cl-rest { };
+  clightning-rest = pkgs.callPackage ./clightning-rest { };
   clboss = pkgs.callPackage ./clboss { };
   clightning-plugins = pkgs.recurseIntoAttrs (import ./clightning-plugins pkgs self.nbPython3Packages);
-  joinmarket = pkgs.callPackage ./joinmarket { inherit (self) nbPython3Packages; };
+  joinmarket = pkgs.callPackage ./joinmarket { nbPythonPackageOverrides = import ./python-packages self; };
   lndinit = pkgs.callPackage ./lndinit { };
   liquid-swap = pkgs.python3Packages.callPackage ./liquid-swap { };
   rtl = pkgs.callPackage ./rtl { };

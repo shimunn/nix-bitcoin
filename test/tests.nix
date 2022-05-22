@@ -59,6 +59,8 @@ let
       systemd.services.clightning.serviceConfig.TimeoutStopSec =
         mkIf config.services.clightning.plugins.clboss.enable "500ms";
 
+      tests.clightning-rest = cfg.clightning-rest.enable;
+
       tests.rtl = cfg.rtl.enable;
       services.rtl.nodes.lnd = mkDefault true;
       services.rtl.nodes.clightning = mkDefault true;
@@ -74,7 +76,8 @@ let
       tests.lnd = cfg.lnd.enable;
       services.lnd.port = 9736;
 
-      tests.lnd-rest-onion-service = cfg.lnd.restOnionService.enable;
+      tests.lndconnect-onion-lnd = cfg.lnd.lndconnectOnion.enable;
+      tests.lndconnect-onion-clightning = cfg.clightning-rest.lndconnectOnion.enable;
 
       tests.lightning-loop = cfg.lightning-loop.enable;
 
@@ -95,6 +98,7 @@ let
       };
       # Needed to test macaroon creation
       environment.systemPackages = mkIfTest "btcpayserver" (with pkgs; [ openssl xxd ]);
+      test.data.btcpayserver-lbtc = config.services.btcpayserver.lbtc;
 
       tests.joinmarket = cfg.joinmarket.enable;
       tests.joinmarket-yieldgenerator = cfg.joinmarket.yieldgenerator.enable;
@@ -162,8 +166,10 @@ let
       test.features.clightningPlugins = true;
       services.rtl.enable = true;
       services.spark-wallet.enable = true;
+      services.clightning-rest.enable = true;
+      services.clightning-rest.lndconnectOnion.enable = true;
       services.lnd.enable = true;
-      services.lnd.restOnionService.enable = true;
+      services.lnd.lndconnectOnion.enable = true;
       services.lightning-loop.enable = true;
       services.lightning-pool.enable = true;
       services.charge-lnd.enable = true;
@@ -205,6 +211,7 @@ let
       imports = [ scenarios.regtestBase ];
       services.clightning.enable = true;
       test.features.clightningPlugins = true;
+      services.clightning-rest.enable = true;
       services.liquidd.enable = true;
       services.rtl.enable = true;
       services.spark-wallet.enable = true;
@@ -264,6 +271,21 @@ let
 
       # `validatepegin` is incompatible with regtest
       services.liquidd.validatepegin = mkForce false;
+
+      # TODO-EXTERNAL:
+      # Reenable `btcpayserver.lbtc` in regtest (and add test in tests.py)
+      # when nbxplorer can parse liquidd regtest blocks.
+      #
+      # When `btcpayserver.lbtc` is enabled in regtest, nxbplorer tries to
+      # generate regtest blocks, which fails because no liquidd wallet exists.
+      # When blocks are pre-generated via `liquidd.postStart`, nbxplorer
+      # fails to parse the blocks:
+      #   info: NBXplorer.Indexer.LBTC: Full node version detected: 210002
+      #   info: NBXplorer.Indexer.LBTC: NBXplorer is correctly whitelisted by the node
+      #     fail: NBXplorer.Indexer.LBTC: Unhandled exception in the indexer, retrying in 10 seconds
+      #       System.IO.EndOfStreamException: No more byte to read
+      #         at NBitcoin.BitcoinStream.ReadWriteBytes(Span`1 data)
+      services.btcpayserver.lbtc = mkForce false;
     };
 
     ## Examples / debug helper

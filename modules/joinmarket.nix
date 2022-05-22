@@ -290,6 +290,7 @@ in {
             echo "Create watch-only wallet ${cfg.rpcWalletFile}"
             if ! output=$(${bitcoind.cli}/bin/bitcoin-cli -named createwallet \
                             wallet_name="${cfg.rpcWalletFile}" \
+                            descriptors=false \
                             ${optionalString (!bitcoind.regtest) "disable_private_keys=true"} 2>&1
                          ); then
               # Ignore error if bitcoind wallet already exists
@@ -327,7 +328,7 @@ in {
         User = cfg.user;
         Restart = "on-failure";
         RestartSec = "10s";
-        ReadWritePaths = cfg.dataDir;
+        ReadWritePaths = [ cfg.dataDir ];
       } // nbLib.allowedIPAddresses cfg.tor.enforce;
     };
 
@@ -367,7 +368,7 @@ in {
         # because it provides the wallet password via stdin to the main process
         SyslogIdentifier = "joinmarket-yieldgenerator";
         User = cfg.user;
-        ReadWritePaths = cfg.dataDir;
+        ReadWritePaths = [ cfg.dataDir ];
       } // nbLib.allowTor;
     };
   })

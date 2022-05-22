@@ -62,6 +62,7 @@ let
     ''}
     ${config.services.bitcoind.dataDir}
     ${config.services.clightning.dataDir}
+    ${config.services.clightning-rest.dataDir}
     ${config.services.lnd.dataDir}
     ${optionalString (!cfg.with-bulk-data) ''
       - ${config.services.liquidd.dataDir}/*/blocks
@@ -121,6 +122,8 @@ in {
         fi
       '';
 
-      services.backups.postgresqlDatabases = mkIf config.services.btcpayserver.enable [ "btcpaydb" ];
+      services.backups.postgresqlDatabases = mkIf config.services.btcpayserver.enable (
+        [ "btcpaydb" ] ++ optional cfg.with-bulk-data "nbxplorer"
+      );
     };
 }

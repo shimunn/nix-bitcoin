@@ -148,9 +148,15 @@ def _():
     assert_matches("runuser -u operator -- lncli getinfo | jq", '"version"')
     assert_no_failure("lnd")
 
-@test("lnd-rest-onion-service")
+@test("lndconnect-onion-lnd")
 def _():
-    assert_matches("runuser -u operator -- lndconnect-rest-onion -j", ".onion")
+    assert_running("lnd")
+    assert_matches("runuser -u operator -- lndconnect-onion --url", ".onion")
+
+@test("lndconnect-onion-clightning")
+def _():
+    assert_running("clightning-rest")
+    assert_matches("runuser -u operator -- lndconnect-onion-clightning --url", ".onion")
 
 @test("lightning-loop")
 def _():
@@ -188,7 +194,7 @@ def _():
 def _():
     assert_running("nbxplorer")
     machine.wait_until_succeeds(log_has_string("nbxplorer", "BTC: RPC connection successful"))
-    if "liquidd" in enabled_tests:
+    if test_data["btcpayserver-lbtc"]:
         machine.wait_until_succeeds(log_has_string("nbxplorer", "LBTC: RPC connection successful"))
     wait_for_open_port(ip("nbxplorer"), 24444)
 
@@ -197,13 +203,13 @@ def _():
     wait_for_open_port(ip("btcpayserver"), 23000)
     # test lnd custom macaroon
     assert_matches(
-        "runuser -u btcpayserver -- curl -s --cacert /secrets/lnd-cert "
+        "runuser -u btcpayserver -- curl -fsS --cacert /secrets/lnd-cert "
         '--header "Grpc-Metadata-macaroon: $(xxd -ps -u -c 1000 /run/lnd/btcpayserver.macaroon)" '
         f"-X GET https://{ip('lnd')}:8080/v1/getinfo | jq",
         '"version"',
     )
     # Test web server response
-    assert_matches(f"curl -L {ip('btcpayserver')}:23000", "Welcome to your BTCPay&nbsp;Server")
+    assert_matches(f"curl -fsS -L {ip('btcpayserver')}:23000", "Welcome to your BTCPay&nbsp;Server")
 
 @test("rtl")
 def _():
@@ -211,9 +217,12 @@ def _():
     machine.wait_until_succeeds(
         log_has_string("rtl", "Server is up and running")
     )
-    assert_running("cl-rest")
+
+@test("clightning-rest")
+def _():
+    assert_running("clightning-rest")
     machine.wait_until_succeeds(
-        log_has_string("cl-rest", "cl-rest api server is ready and listening on port: 3001")
+        log_has_string("clightning-rest", "cl-rest api server is ready and listening on port: 3001")
     )
 
 @test("spark-wallet")
@@ -221,7 +230,7 @@ def _():
     assert_running("spark-wallet")
     wait_for_open_port(ip("spark-wallet"), 9737)
     spark_auth = re.search("login=(.*)", succeed("cat /secrets/spark-wallet-login"))[1]
-    assert_matches(f"curl -s {spark_auth}@{ip('spark-wallet')}:9737", "Spark")
+    assert_matches(f"curl -fsS {spark_auth}@{ip('spark-wallet')}:9737", "Spark")
 
 @test("joinmarket")
 def _():
@@ -398,13 +407,7 @@ def _():
         )
         succeed("runuser -u operator -- pool orders list")
     if enabled("btcpayserver"):
-        machine.wait_until_succeeds(log_has_string("nbxplorer", f"BTC: Starting scan at block {num_blocks}"))
-        # TODO-EXTERNAL:
-        # nbxplorer 2.2.16 currently fails with with lbtc (liquidd) on regtest
-        # LBTC: Full node version detected: 210000
-        # LBTC: RPC connection successful
-        # LBTC: Failed to connect to RPC
-        # System.IO.EndOfStreamException: No more byte to read
+        machine.wait_until_succeeds(log_has_string("nbxplorer", f"At height: {num_blocks}"))
 
 if "netns-isolation" in enabled_tests:
     def ip(name):

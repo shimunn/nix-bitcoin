@@ -53,6 +53,17 @@
   # == Plugins
   # See ../README.md (Features → clightning) for the list of available plugins.
   # services.clightning.plugins.prometheus.enable = true;
+  #
+  # == REST server
+  # Set this to create a clightning REST onion service.
+  # This also adds binary `lndconnect-onion-clightning` to the system environment.
+  # This binary creates QR codes or URLs for connecting applications to clightning
+  # via the REST onion service (see ../docs/services.md).
+  #
+  # services.clightning-rest = {
+  #   enable = true;
+  #   lndconnectOnion.enable = true;
+  # };
 
   ### LND
   # Set this to enable lnd, a lightning implementation written in Go.
@@ -68,10 +79,10 @@
   # nix-bitcoin.onionServices.lnd.public = true;
   #
   # Set this to create an lnd REST onion service.
-  # Adds binary `lndconnect-rest-onion` to the system environment.
-  # This binary generates QR codes or URIs for connecting applications to lnd via the
-  # REST onion service.
-  # services.lnd.restOnionService.enable = true;
+  # This also adds binary `lndconnect-onion` to the system environment.
+  # This binary generates QR codes or URLs for connecting applications to lnd via the
+  # REST onion service (see ../docs/services.md).
+  # services.lnd.lndconnectOnion.enable = true;
   #
   ## WARNING
   # If you use lnd, you should manually backup your wallet mnemonic
@@ -263,10 +274,10 @@
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
-  system.stateVersion = "21.05"; # Did you read the comment?
+  system.stateVersion = "21.11"; # Did you read the comment?
 
   # The nix-bitcoin release version that your config is compatible with.
   # When upgrading to a backwards-incompatible release, nix-bitcoin will display an
   # an error and provide hints for migrating your config to the new release.
-  nix-bitcoin.configVersion = "0.0.65";
+  nix-bitcoin.configVersion = "0.0.70";
 }
