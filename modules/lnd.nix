@@ -71,13 +71,37 @@ let
         Extra macaroon definitions.
       '';
     };
+    certificate = {
+      extraIPs = mkOption {
+        type = with types; listOf str;
+        default = [];
+        example = [ "60.100.0.1" ];
+        description = ''
+          Extra `subjectAltName` IPs added to the certificate.
+          This works the same as lnd option `tlsextraip`.
+        '';
+      };
+      extraDomains = mkOption {
+        type = with types; listOf str;
+        default = [];
+        example = [ "example.com" ];
+        description = ''
+          Extra `subjectAltName` domain names added to the certificate.
+          This works the same as lnd option `tlsextradomain`.
+        '';
+      };
+    };
     extraConfig = mkOption {
       type = types.lines;
       default = "";
       example = ''
         autopilot.active=1
       '';
-      description = "Extra lines appended to <filename>lnd.conf</filename>.";
+      description = ''
+        Extra lines appended to `lnd.conf`.
+        See here for all available options:
+        https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf
+      '';
     };
     package = mkOption {
       type = types.package;
@@ -159,6 +183,9 @@ let
         bitcoin.node=neutrino
         feeurl=https://nodes.lightning.computer/fees/v1/btc-fee-estimates.json
     ''}
+
+    wallet-unlock-password-file=${secretsDir}/lnd-wallet-password
+
     ${cfg.extraConfig}
   '';
 in {
@@ -196,6 +223,8 @@ in {
       "d '${cfg.dataDir}' 0770 ${cfg.user} ${cfg.group} - -"
     ];
 
+    services.lnd.certificate.extraIPs = mkIf (cfg.rpcAddress != "localhost") [ "${cfg.rpcAddress}" ];
+
     systemd.services.lnd = {
       wantedBy = [ "multi-user.target" ];
       requires = if cfg.useNeutrino then [] else [ "bitcoind.service" ];
@@ -228,11 +257,7 @@ in {
         Type = "notify";
         RuntimeDirectory = "lnd"; # Only used to store custom macaroons
         RuntimeDirectoryMode = "711";
-        ExecStart = ''
-          ${cfg.package}/bin/lnd \
-            --configfile="${cfg.dataDir}/lnd.conf" \
-            --wallet-unlock-password-file="${secretsDir}/lnd-wallet-password"
-        '';
+        ExecStart = "${cfg.package}/bin/lnd --configfile='${cfg.dataDir}/lnd.conf'";
         User = cfg.user;
         TimeoutSec = "15min";
         Restart = "on-failure";
@@ -283,7 +308,7 @@ in {
     # - Enables deployment of a mesh of server plus client nodes with predefined certs
     nix-bitcoin.generateSecretsCmds.lnd = ''
       makePasswordSecret lnd-wallet-password
-      makeCert lnd '${optionalString (cfg.rpcAddress != "localhost") "IP:${cfg.rpcAddress}"}'
+      makeCert lnd '${nbLib.mkCertExtraAltNames cfg.certificate}'
     '';
   };
 }

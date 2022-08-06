@@ -26,15 +26,17 @@ echo "Building the target VM"
 # Build the initial VM to which the nix-bitcoin node is deployed via krops
 nix-build --out-link $tmpDir/vm - <<'EOF'
 (import <nixpkgs/nixos> {
-  configuration = { lib, ... }: {
+  configuration = { config, lib, ... }: {
     imports = [ <qemu-vm/vm-config.nix>  ];
     services.openssh.enable = true;
 
     # Silence the following warning that appears when deploying via krops:
     # warning: Nix search path entry '/nix/var/nix/profiles/per-user/root/channels' does not exist, ignoring
     nix.nixPath = lib.mkForce [];
+
+    system.stateVersion = lib.mkDefault config.system.nixos.release;
   };
-}).vm
+}).config.system.build.vm
 EOF
 
 vmNumCPUs=4
@@ -97,6 +99,10 @@ vmWaitForSSH
 # Add the store paths that include the nix-bitcoin node
 # to the nix store db in the VM
 c "nix-store --load-db < $(realpath $tmpDir/store-paths)/registration"
+
+echo
+echo "Generate secrets"
+nix-shell --run generate-secrets
 
 echo
 echo "Deploy with krops"

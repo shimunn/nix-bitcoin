@@ -35,6 +35,13 @@ let
       # Share the same pkgs instance among tests
       nixpkgs.pkgs = mkDefault globalPkgs;
 
+      environment.systemPackages = mkMerge (with pkgs; [
+        # Needed to test macaroon creation
+        (mkIfTest "btcpayserver" [ openssl xxd ])
+        # Needed to test certificate creation
+        (mkIfTest "lnd" [ openssl ])
+      ]);
+
       tests.bitcoind = cfg.bitcoind.enable;
       services.bitcoind = {
         enable = true;
@@ -81,12 +88,19 @@ let
       tests.spark-wallet = cfg.spark-wallet.enable;
 
       tests.lnd = cfg.lnd.enable;
-      services.lnd.port = 9736;
+      services.lnd = {
+        port = 9736;
+        certificate = {
+          extraIPs = [ "10.0.0.1" "20.0.0.1" ];
+          extraDomains = [ "example.com" ];
+        };
+      };
 
       tests.lndconnect-onion-lnd = cfg.lnd.lndconnectOnion.enable;
       tests.lndconnect-onion-clightning = cfg.clightning-rest.lndconnectOnion.enable;
 
       tests.lightning-loop = cfg.lightning-loop.enable;
+      services.lightning-loop.certificate.extraIPs = [ "20.0.0.1" ];
 
       tests.lightning-pool = cfg.lightning-pool.enable;
       nix-bitcoin.onionServices.lnd.public = true;
@@ -94,6 +108,9 @@ let
       tests.charge-lnd = cfg.charge-lnd.enable;
 
       tests.electrs = cfg.electrs.enable;
+
+      services.fulcrum.port = 50002;
+      tests.fulcrum = cfg.fulcrum.enable;
 
       tests.liquidd = cfg.liquidd.enable;
       services.liquidd.extraConfig = mkIf config.test.noConnections "connect=0";
@@ -103,8 +120,6 @@ let
         lightningBackend = mkDefault "lnd";
         lbtc = mkDefault true;
       };
-      # Needed to test macaroon creation
-      environment.systemPackages = mkIfTest "btcpayserver" (with pkgs; [ openssl xxd ]);
       test.data.btcpayserver-lbtc = config.services.btcpayserver.lbtc;
 
       tests.joinmarket = cfg.joinmarket.enable;
@@ -129,7 +144,7 @@ let
       '';
 
       # Avoid timeout failures on slow CI nodes
-      systemd.services.postgresql.serviceConfig.TimeoutStartSec = "3min";
+      systemd.services.postgresql.serviceConfig.TimeoutStartSec = "5min";
     }
     (mkIf config.test.features.clightningPlugins {
       services.clightning.plugins = {
@@ -182,6 +197,7 @@ let
       services.lightning-pool.enable = true;
       services.charge-lnd.enable = true;
       services.electrs.enable = true;
+      services.fulcrum.enable = true;
       services.liquidd.enable = true;
       services.btcpayserver.enable = true;
       services.joinmarket.enable = true;
@@ -202,7 +218,7 @@ let
         ../modules/presets/secure-node.nix
       ];
       tests.secure-node = true;
-      tests.banlist-and-restart = true;
+      tests.restart-bitcoind = true;
 
       # Stop electrs from spamming the test log with 'WARN - wait until IBD is over' messages
       tests.stop-electrs = true;
@@ -228,6 +244,7 @@ let
       services.lightning-pool.enable = true;
       services.charge-lnd.enable = true;
       services.electrs.enable = true;
+      services.fulcrum.enable = true;
       services.btcpayserver.enable = true;
       services.joinmarket.enable = true;
     };

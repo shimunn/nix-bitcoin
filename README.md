@@ -52,6 +52,9 @@ Docs
 Hint: To show a table of contents, click the button (![Github TOC button](docs/img/github-table-of-contents.svg)) in the
 top left corner of the documents.
 
+<!-- TODO-EXTERNAL: -->
+<!-- Change query to `nix-bitcoin` when upstream search has been fixed -->
+* [NixOS Options Search](https://search.nixos.org/flakes?channel=unstable&sort=relevance&type=options&query=bitcoin)
 * [Hardware requirements](docs/hardware.md)
 * [Installation](docs/install.md)
 * [Configuration and maintenance](docs/configuration.md)
@@ -65,11 +68,12 @@ A [configuration preset](modules/presets/secure-node.nix) for setting up a secur
 
 NixOS modules ([src](modules/modules.nix))
 * Application services
-  * [bitcoind](https://github.com/bitcoin/bitcoin), with a default banlist against spy nodes
+  * [bitcoind](https://github.com/bitcoin/bitcoin)
   * [clightning](https://github.com/ElementsProject/lightning) with support for announcing an onion service\
     Available plugins:
     * [clboss](https://github.com/ZmnSCPxj/clboss): automated C-Lightning Node Manager
     * [commando](https://github.com/lightningd/plugins/tree/master/commando): control your node over lightning
+    * [currencyrate](https://github.com/lightningd/plugins/tree/master/currencyrate): currency converter
     * [helpme](https://github.com/lightningd/plugins/tree/master/helpme): walks you through setting up a fresh c-lightning node
     * [monitor](https://github.com/lightningd/plugins/tree/master/monitor): helps you analyze the health of your peers and channels
     * [prometheus](https://github.com/lightningd/plugins/tree/master/prometheus): lightning node exporter for the prometheus timeseries server
@@ -85,6 +89,7 @@ NixOS modules ([src](modules/modules.nix))
   * [Ride The Lightning](https://github.com/Ride-The-Lightning/RTL): web interface for `lnd` and `clightning`
   * [spark-wallet](https://github.com/shesek/spark-wallet)
   * [electrs](https://github.com/romanz/electrs)
+  * [fulcrum](https://github.com/cculianu/Fulcrum) (see [the module](modules/fulcrum.nix) for a comparison to electrs)
   * [btcpayserver](https://github.com/btcpayserver/btcpayserver)
   * [liquid](https://github.com/elementsproject/elements)
   * [JoinMarket](https://github.com/joinmarket-org/joinmarket-clientserver)
@@ -108,6 +113,12 @@ nix-bitcoin aims to achieve a high degree of security by building on the followi
 * **Defense-in-depth:** nix-bitcoin supports a [hardened kernel](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/profiles/hardened.nix), services are confined through discretionary access control, Linux namespaces, [dbus firewall](modules/security.nix) and seccomp-bpf with continuous improvements.
 
 Note that if the machine you're deploying *from* is insecure, there is nothing nix-bitcoin can do to protect itself.
+
+Security fund
+---
+The nix-bitcoin security fund is a 2 of 3 bitcoin multisig address open for donations, used to reward
+security researchers who discover vulnerabilities in nix-bitcoin or its upstream dependencies.\
+See [Security Fund](./SECURITY.md#nix-bitcoin-security-fund) for details.
 
 Troubleshooting
 ---

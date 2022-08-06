@@ -418,7 +418,7 @@ in {
         NotifyAccess = "all";
         User = cfg.user;
         Group = cfg.group;
-        TimeoutStartSec = "5min";
+        TimeoutStartSec = "10min";
         TimeoutStopSec = "10min";
         ExecStart = "${cfg.package}/bin/bitcoind -datadir='${cfg.dataDir}'";
         Restart = "on-failure";
@@ -426,31 +426,6 @@ in {
         ReadWritePaths = [ cfg.dataDir ];
       } // nbLib.allowedIPAddresses cfg.tor.enforce
         // optionalAttrs zmqServerEnabled nbLib.allowNetlink;
-    };
-
-    # Use this to update the banlist:
-    # wget https://people.xiph.org/~greg/banlist.cli.txt
-    systemd.services.bitcoind-import-banlist = {
-      description = "Bitcoin daemon banlist importer";
-      wantedBy = [ "bitcoind.service" ];
-      bindsTo = [ "bitcoind.service" ];
-      after = [ "bitcoind.service" ];
-      script = ''
-        cd ${cfg.cli}/bin
-        echo "Importing node banlist..."
-        cat ${./banlist.cli.txt} | while read line; do
-          if ! err=$(eval "$line" 2>&1) && [[ $err != *already\ banned* ]]; then
-            # unexpected error
-            echo "$err"
-            exit 1
-          fi
-        done
-      '';
-      serviceConfig = nbLib.defaultHardening // {
-        User = cfg.user;
-        Group = cfg.group;
-        ReadWritePaths = [ cfg.dataDir ];
-      } // nbLib.allowLocalIPAddresses;
     };
 
     users.users.${cfg.user} = {

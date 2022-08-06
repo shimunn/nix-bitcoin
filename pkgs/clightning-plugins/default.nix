@@ -6,14 +6,27 @@ let
   src = pkgs.fetchFromGitHub {
     owner = "lightningd";
     repo = "plugins";
-    rev = "7ef9e6c172c0bd0dd09168e19b29e44f7ec6ec4d";
-    sha256 = "12llf4dnyria0s1x4bmm360d6bxk47z0wyxwwlmq3762mdfl36js";
+    rev = "59bad754cb338872c622ad716e8ed0063edf4052";
+    sha256 = "19nnmv2jvb0xmcha79dij399avasn2x521n9qg11lqj8xnzadm6a";
   };
 
   version = builtins.substring 0 7 src.rev;
 
   plugins = with nbPython3Packages; {
-    helpme = { description = "Walks you through setting up a c-lightning node, offering advice for common problems"; };
+    commando = {
+      description = "Enable RPC over lightning";
+      extraPkgs = [ nbPython3Packages.runes ];
+    };
+    currencyrate = {
+      description = "Currency rate fetcher and converter";
+      extraPkgs = [ requests cachetools ];
+    };
+    feeadjuster = {
+      description = "Dynamically changes channel fees to keep your channels more balanced";
+    };
+    helpme = {
+      description = "Walks you through setting up a c-lightning node, offering advice for common problems";
+    };
     monitor = {
       description = "Helps you analyze the health of your peers and channels";
       extraPkgs = [ packaging ];
@@ -22,13 +35,11 @@ let
       description = "Lightning node exporter for the prometheus timeseries server";
       extraPkgs = [ prometheus_client ];
       patchRequirements =
-        "--replace prometheus-client==0.6.0 prometheus-client==0.11.0"
+        "--replace prometheus-client==0.6.0 prometheus-client==0.13.1"
         + " --replace pyln-client~=0.9.3 pyln-client~=0.10.1";
     };
-    rebalance = { description = "Keeps your channels balanced"; };
-    commando = {
-      description = "Enable RPC over lightning";
-      extraPkgs = [ nbPython3Packages.runes ];
+    rebalance = {
+      description = "Keeps your channels balanced";
     };
     summary = {
       description = "Prints a summary of the node status";
@@ -38,9 +49,6 @@ let
       description = "Publishes notifications via ZeroMQ to configured endpoints";
       scriptName = "cl-zmq";
       extraPkgs = [ twisted txzmq ];
-    };
-    feeadjuster = {
-      description = "Dynamically changes channel fees to keep your channels more balanced";
     };
   };
 
