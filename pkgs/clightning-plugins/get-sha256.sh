@@ -1,6 +1,6 @@
-#! /usr/bin/env nix-shell
-#! nix-shell -i bash -p git
+#!/usr/bin/env bash
 set -euo pipefail
+. "${BASH_SOURCE[0]%/*}/../../helper/run-in-nix-env" "git" "$@"
 
 archive_hash () {
     repo=$1
@@ -11,4 +11,4 @@ archive_hash () {
 echo "Fetching latest lightningd/plugins release"
 latest=$(git ls-remote https://github.com/lightningd/plugins master | cut -f 1)
 echo "rev = \"${latest}\";"
-echo "sha256 = \"$(archive_hash lightningd/plugins $latest)\";"
+echo "sha256 = \"$(archive_hash lightningd/plugins "$latest")\";"

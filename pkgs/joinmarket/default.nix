@@ -1,20 +1,10 @@
-{ stdenv, lib, fetchurl, applyPatches, fetchpatch, python3, nbPythonPackageOverrides, pkgs }:
+{ stdenv, lib, fetchurl, python3, nbPythonPackageOverrides, pkgs }:
 
 let
-  version = "0.9.6";
-  src = applyPatches {
-    src = fetchurl {
-      url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/archive/v${version}.tar.gz";
-      sha256 = "040qj3abqkk74zyi5yav1ijlh5cmd49wlymald2lzk35adnx804g";
-    };
-    patches = [
-      (fetchpatch {
-        # https://github.com/JoinMarket-Org/joinmarket-clientserver/pull/1264
-        name = "use-twisted-22.4.0";
-        url = "https://patch-diff.githubusercontent.com/raw/JoinMarket-Org/joinmarket-clientserver/pull/1264.patch";
-        sha256 = "1nlyhc5myph9239d5zczsl4jan4qj4ggy0l1f39jv0ihjbjhcks5";
-      })
-    ];
+  version = "0.9.7";
+  src = fetchurl {
+    url = "https://github.com/JoinMarket-Org/joinmarket-clientserver/archive/v${version}.tar.gz";
+    sha256 = "13bfr8ha6bka8wiai8m79ki43dn2r311lrfffr39ni2wy1v12l93";
   };
 
   pyPkgs = (python3.override {
@@ -44,14 +34,14 @@ stdenv.mkDerivation {
   buildInputs = [ pythonEnv ];
 
   installPhase = ''
-    mkdir -p $out/bin
+    mkdir -p "$out/bin"
 
     # add-utxo.py -> bin/jm-add-utxo
     cpBin() {
-      cp scripts/$1 $out/bin/jm-''${1%.py}
+      cp "scripts/$1" "$out/bin/jm-''${1%.py}"
     }
 
-    cp scripts/joinmarketd.py $out/bin/joinmarketd
+    cp scripts/joinmarketd.py "$out/bin/joinmarketd"
     cpBin add-utxo.py
     cpBin convert_old_wallet.py
     cpBin receive-payjoin.py
@@ -62,17 +52,17 @@ stdenv.mkDerivation {
     cpBin yg-privacyenhanced.py
     cpBin genwallet.py
 
-    chmod +x -R $out/bin
-    patchShebangs $out/bin
+    chmod +x -R "$out/bin"
+    patchShebangs "$out/bin"
 
     ## ob-watcher
     obw=$out/libexec/joinmarket-ob-watcher
-    install -D scripts/obwatch/ob-watcher.py $obw/ob-watcher
-    patchShebangs $obw/ob-watcher
-    ln -s $obw/ob-watcher $out/bin/jm-ob-watcher
+    install -D scripts/obwatch/ob-watcher.py "$obw/ob-watcher"
+    patchShebangs "$obw/ob-watcher"
+    ln -s "$obw/ob-watcher" "$out/bin/jm-ob-watcher"
 
     # These files must be placed in the same dir as ob-watcher
-    cp -r scripts/obwatch/{orderbook.html,sybil_attack_calculations.py,vendor} $obw
+    cp -r scripts/obwatch/{orderbook.html,sybil_attack_calculations.py,vendor} "$obw"
   '';
 
   meta = with lib; {

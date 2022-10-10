@@ -6,17 +6,13 @@ let
   src = pkgs.fetchFromGitHub {
     owner = "lightningd";
     repo = "plugins";
-    rev = "59bad754cb338872c622ad716e8ed0063edf4052";
-    sha256 = "19nnmv2jvb0xmcha79dij399avasn2x521n9qg11lqj8xnzadm6a";
+    rev = "e625369423b00c70b23641662f62ccd898286edc";
+    sha256 = "04f30xlfr7pgdmdgka87x7sc9j82wc4zv7fbiqrjsc83dkmly81i";
   };
 
   version = builtins.substring 0 7 src.rev;
 
   plugins = with nbPython3Packages; {
-    commando = {
-      description = "Enable RPC over lightning";
-      extraPkgs = [ nbPython3Packages.runes ];
-    };
     currencyrate = {
       description = "Currency rate fetcher and converter";
       extraPkgs = [ requests cachetools ];
@@ -36,7 +32,7 @@ let
       extraPkgs = [ prometheus_client ];
       patchRequirements =
         "--replace prometheus-client==0.6.0 prometheus-client==0.13.1"
-        + " --replace pyln-client~=0.9.3 pyln-client~=0.10.1";
+        + " --replace pyln-client~=0.9.3 pyln-client~=0.11.1";
     };
     rebalance = {
       description = "Keeps your channels balanced";
@@ -64,18 +60,18 @@ let
       buildInputs = [ python ];
 
       buildCommand = ''
-        cp --no-preserve=mode -r ${src}/${name} $out
-        cd $out
+        cp --no-preserve=mode -r '${src}/${name}' "$out"
+        cd "$out"
         ${lib.optionalString (plugin ? patchRequirements) ''
           substituteInPlace requirements.txt ${plugin.patchRequirements}
         ''}
 
         # Check that requirements are met
-        PYTHONPATH=${toString python}/${python.sitePackages} \
+        PYTHONPATH='${toString python}/${python.sitePackages}' \
           ${pkgs.python3Packages.pip}/bin/pip install -r requirements.txt --no-cache --no-index
 
-        chmod +x ${script}
-        patchShebangs ${script}
+        chmod +x '${script}'
+        patchShebangs '${script}'
       '';
 
       passthru.path = "${drv}/${script}";

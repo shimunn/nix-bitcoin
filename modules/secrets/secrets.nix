@@ -73,7 +73,7 @@ let
     generateSecretsScript = mkOption {
       internal = true;
       default = let
-        rpcauthSrc = builtins.fetchurl {
+        rpcauthSrc = pkgs.fetchurl {
           url = "https://raw.githubusercontent.com/bitcoin/bitcoin/d6cde007db9d3e6ee93bd98a9bbfdce9bfa9b15b/share/rpcauth/rpcauth.py";
           sha256 = "189mpplam6yzizssrgiyv70c9899ggh8cac76j4n7v0xqzfip07n";
         };
@@ -210,7 +210,7 @@ in {
         processedFiles=()
         ${
           concatStrings (mapAttrsToList (n: v: ''
-            setupSecret ${n} ${v.user} ${v.group} ${v.permissions} }
+            setupSecret ${n} ${v.user} ${v.group} ${v.permissions}
           '') cfg.secrets)
         }
 
@@ -220,7 +220,9 @@ in {
         )
         if [[ $unprocessedFiles ]]; then
           IFS=$'\n'
+          # shellcheck disable=SC2086
           chown root: $unprocessedFiles
+          # shellcheck disable=SC2086
           chmod 0440 $unprocessedFiles
         fi
 
